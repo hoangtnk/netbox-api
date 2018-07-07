@@ -23,7 +23,7 @@ class NetBoxAPI(object):
         self.verify = verify
         self.headers = {'Authorization': 'Token {}'.format(self.token)}
 
-    def _get_prefix_id(self, prefix, limit=500, offset=0):
+    def get_prefix_id(self, prefix, limit=500, offset=0):
         """Get id of a prefix.
 
         :param prefix: (str) the prefix that we want to get corresponding id
@@ -50,7 +50,7 @@ class NetBoxAPI(object):
                     return None
                 prefixes = requests.get(prefixes['next']).json()
 
-    def _get_ip_id(self, ip_addr, limit=500, offset=0):
+    def get_ip_id(self, ip_addr, limit=500, offset=0):
         """Get id of an IP address.
 
         :param ip_addr: (str) the IP address that we want to get corresponding id
@@ -77,7 +77,7 @@ class NetBoxAPI(object):
                     return None
                 ips = requests.get(ips['next']).json()
 
-    def _get_available_ips(self, prefix):
+    def get_available_ips(self, prefix):
         """Get available IPs from a prefix.
 
         :param prefix: (str) the prefix to get available IPs from
@@ -86,7 +86,7 @@ class NetBoxAPI(object):
 
         length = int(prefix.split('/')[1])
         num_ips = 2 ** (32 - length)  # the number of IPs in subnet
-        prefix_id = self._get_prefix_id(prefix)
+        prefix_id = self.get_prefix_id(prefix)
         url = "https://{}/api/ipam/prefixes/{}/available-ips/?limit={}".format(self.host, prefix_id, num_ips)
         try:
             rsp = requests.get(url, verify=self.verify)
@@ -157,7 +157,7 @@ class NetBoxAPI(object):
 
         data = {attr: val for attr, val in kwargs.items()}
         data['address'] = ip_addr
-        ip_id = self._get_ip_id(ip_addr)
+        ip_id = self.get_ip_id(ip_addr)
         url = "https://{}/api/ipam/ip-addresses/{}/".format(self.host, ip_id)
         try:
             rsp = requests.patch(url, headers=self.headers, json=data, verify=self.verify)
@@ -176,7 +176,7 @@ class NetBoxAPI(object):
         :return: (bool) True if deleted successfully
         """
 
-        ip_id = self._get_ip_id(ip_addr)
+        ip_id = self.get_ip_id(ip_addr)
         url = "https://{}/api/ipam/ip-addresses/{}/".format(self.host, ip_id)
         try:
             rsp = requests.delete(url, headers=self.headers, verify=self.verify)
@@ -197,7 +197,7 @@ class NetBoxAPI(object):
         :return: (str) an available IP
         """
 
-        available_ips = self._get_available_ips(prefix)
+        available_ips = self.get_available_ips(prefix)
         if num_reserved_ips > 0:
             reserved_ips = NetBoxAPI._get_reserved_ips(prefix, num_reserved_ips)
             for ip in available_ips:
