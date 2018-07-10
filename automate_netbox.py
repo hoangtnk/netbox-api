@@ -188,12 +188,13 @@ class NetBoxAPI(object):
                 raise ValueError(msg)
             return True
 
-    def allocate_ip_to(self, description, prefix='192.168.1.0/24', num_reserved_ips=20):
+    def allocate_ip_to(self, description, prefix='192.168.1.0/24', num_reserved_ips=20, post_to_netbox=True):
         """Allocate an IP from available IPs.
 
         :param prefix: (str) the prefix from which to allocate an available IP
         :param description: (str) description for allocated IP
         :param num_reserved_ips: (int) the number of reserved (non-assigned) IPs in this prefix
+        :param post_to_netbox: (bool) whether or not to post the allocated IP to NetBox
         :return: (str) an available IP
         """
 
@@ -202,9 +203,11 @@ class NetBoxAPI(object):
             reserved_ips = NetBoxAPI._get_reserved_ips(prefix, num_reserved_ips)
             for ip in available_ips:
                 if ip['address'] not in reserved_ips:
-                    self.post_ip_to_netbox(description=description, address=ip['address'])
+                    if post_to_netbox:
+                        self.post_ip_to_netbox(description=description, address=ip['address'])
                     return ip['address']
             return None
-
-        self.post_ip_to_netbox(description=description, address=available_ips[0]['address'])
+        
+        if post_to_netbox:
+            self.post_ip_to_netbox(description=description, address=available_ips[0]['address'])
         return available_ips[0]['address']
